@@ -1,6 +1,6 @@
 FROM python:3.11-slim
 
-# Install system dependencies
+# Install system dependencies required by Playwright
 RUN apt-get update && apt-get install -y \
     curl \
     wget \
@@ -23,18 +23,21 @@ RUN apt-get update && apt-get install -y \
     xdg-utils \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Python dependencies
+# Set work directory
 WORKDIR /app
+
+# Install Python dependencies
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Install Playwright and its browsers
-RUN pip install playwright \
-    && playwright install --with-deps
+# Install Playwright and required browsers
+RUN pip install playwright && playwright install --with-deps
 
-# Copy application code
+# Copy the rest of the app
 COPY . .
 
+# Expose port
 EXPOSE 8000
 
+# Run the FastAPI app
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
