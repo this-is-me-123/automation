@@ -8,5 +8,7 @@ class Settings(BaseSettings):
 
     model_config = SettingsConfigDict(
         env_file=f".env.{os.getenv('ENV', 'development')}",
-        extra="forbid",  # Optional: default is 'forbid'; change to 'allow' if needed
+        extra="forbid"  # Only allow fields defined above
     )
+
+settings = Settings()
