@@ -1,3 +1,4 @@
+import base64
 from fastapi.responses import JSONResponse
 from playwright.async_api import async_playwright
 
@@ -11,15 +12,38 @@ def return_mock_login(username: str):
 async def run_real_login(username: str, password: str):
     async with async_playwright() as p:
         browser = await p.chromium.launch(headless=True)
-        page = await browser.new_page()
-        await page.goto("https://onlyfans.com/")
-        await page.fill('input[name="email"]', username)
-        await page.fill('input[name="password"]', password)
-        await page.click('button[type="submit"]')
-        await page.wait_for_load_state("networkidle")
-        content = await page.content()
-        await browser.close()
-        return {
-            "status": "success",
-            "content_snippet": content[:500]
-        }
+        context = await browser.new_context()
+        page = await context.new_page()
+
+        try:
+            await page.goto("https://onlyfans.com/", timeout=60000)
+            await page.wait_for_selector('input[name="email"]', timeout=15000)
+            await page.fill('input[name="email"]', username)
+            await page.fill('input[name="password"]', password)
+            await page.click('button[type="submit"]')
+
+            await page.wait_for_load_state("networkidle", timeout=20000)
+
+            # Optional wait to let things settle after login
+            await page.wait_for_timeout(2000)
+
+            # Get page info and screenshot
+            content = await page.content()
+            title = await page.title()
+            current_url = page.url
+
+            screenshot_bytes = await page.screenshot(full_page=True)
+            screenshot_b64 = base64.b64encode(screenshot_bytes).decode("utf-8")
+
+            await browser.close()
+            return {
+                "status": "success",
+                "title": title,
+                "url": current_url,
+                "content_snippet": content[:500],
+                "screenshot_base64": screenshot_b64
+            }
+
+        except Exception as e:
+            await browser.close()
+            raise Exception(f"Playwright error: {str(e)}")
