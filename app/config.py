@@ -1,10 +1,12 @@
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 import os
 
 class Settings(BaseSettings):
     env: str = "development"
     debug: bool = True
-    mock_login: bool = False  # ✅ This must match your .env var
+    mock_login: bool = False
 
-    class Config:
-        env_file = f".env.{os.getenv('ENV', 'dev')}"
+    model_config = SettingsConfigDict(
+        env_file=f".env.{os.getenv('ENV', 'development')}",
+        extra="forbid",  # Optional: default is 'forbid'; change to 'allow' if needed
+    )
