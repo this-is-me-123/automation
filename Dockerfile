@@ -1,24 +1,10 @@
-# Dockerfile
-
-FROM python:3.11-slim
-
-WORKDIR /app
-
-COPY . .
-
-RUN pip install --no-cache-dir -r requirements.txt
-
-# Default to production
-ENV ENV=production
-
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
 # Use official Python slim image
 FROM python:3.11-slim
 
 # Set working directory
 WORKDIR /app
 
-# Install system dependencies for Playwright browsers and Chromium
+# Install system dependencies required by Playwright
 RUN apt-get update && apt-get install -y \
     wget \
     curl \
@@ -43,20 +29,23 @@ RUN apt-get update && apt-get install -y \
     libxshmfence1 \
     --no-install-recommends && rm -rf /var/lib/apt/lists/*
 
-# Copy only requirements first for better cache
+# Copy only requirements first for caching
 COPY requirements.txt .
 
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Install Playwright browsers (chromium, firefox, webkit)
+# Install Playwright browsers (Chromium by default)
 RUN playwright install --with-deps
 
 # Copy the rest of the app code
 COPY . .
 
-# Expose port
+# Set environment variable default
+ENV ENV=production
+
+# Expose FastAPI default port
 EXPOSE 8000
 
-# Run Uvicorn server
+# Run the application
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
